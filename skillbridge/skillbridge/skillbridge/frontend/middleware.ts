@@ -1,4 +1,4 @@
-import { WithClerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 const isPublicRoute = createRouteMatcher([
   "/",
@@ -16,7 +16,3 @@ export default clerkMiddleware((auth, req) => {
 export const config = {
   matcher: ["/((?!.+\\.[\\w]+$).*)"],
 };
-function clerkMiddleware(arg0: (auth: any, req: any) => any) {
-  throw new Error("Function not implemented.");
-}
-

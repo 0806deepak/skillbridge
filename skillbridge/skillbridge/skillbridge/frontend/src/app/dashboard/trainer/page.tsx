@@ -9,39 +9,60 @@ export default function TrainerDashboard() {
   const [batches, setBatches] = useState<any[]>([])
   const [showForm, setShowForm] = useState(false)
   const [inviteUrl, setInviteUrl] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({ title: '', batchId: '', date: '', startTime: '', endTime: '' })
 
   const fetchData = async () => {
-    const token = await getToken()
-    const headers = { Authorization: `Bearer ${token}` }
-    const [sessRes, batchRes] = await Promise.all([
-      axios.get(`${process.env.NEXT_PUBLIC_API_URL}/sessions`, { headers }),
-      axios.get(`${process.env.NEXT_PUBLIC_API_URL}/batches`, { headers }),
-    ])
-    setSessions(sessRes.data)
-    setBatches(batchRes.data)
+    try {
+      setLoading(true)
+      setError(null)
+      const token = await getToken()
+      const headers = { Authorization: `Bearer ${token}` }
+      const [sessRes, batchRes] = await Promise.all([
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/sessions`, { headers }),
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/batches`, { headers }),
+      ])
+      setSessions(sessRes.data)
+      setBatches(batchRes.data)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch data'
+      setError(message)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  useEffect(() => { fetchData() }, [])
+  useEffect(() => {
+    fetchData()
+  }, [getToken])
 
   const createSession = async () => {
-    const token = await getToken()
-    await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/sessions`, form, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    setShowForm(false)
-    setForm({ title: '', batchId: '', date: '', startTime: '', endTime: '' })
-    fetchData()
+    try {
+      const token = await getToken()
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/sessions`, form, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setShowForm(false)
+      setForm({ title: '', batchId: '', date: '', startTime: '', endTime: '' })
+      fetchData()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create session')
+    }
   }
 
   const generateInvite = async (batchId: string) => {
-    const token = await getToken()
-    const { data } = await axios.post(
-      `${process.env.NEXT_PUBLIC_API_URL}/batches/${batchId}/invite`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    )
-    setInviteUrl(data.inviteUrl)
+    try {
+      const token = await getToken()
+      const { data } = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/batches/${batchId}/invite`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      setInviteUrl(data.inviteUrl)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate invite')
+    }
   }
 
   return (
@@ -57,6 +78,18 @@ export default function TrainerDashboard() {
           </button>
         </div>
 
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-800 text-sm">{error}</p>
+          </div>
+        )}
+
+        {loading && (
+          <div className="mb-6 p-8 bg-white rounded-xl border border-gray-100 text-center">
+            <p className="text-gray-500">Loading...</p>
+          </div>
+        )}
+
         {/* Create Session Form */}
         {showForm && (
           <div className="bg-white rounded-xl border border-gray-100 p-5 mb-6">
@@ -67,7 +100,7 @@ export default function TrainerDashboard() {
                 <input
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1"
                   value={form.title}
-                  onChange={(e: { target: { value: any } }) => setForm({ ...form, title: e.target.value })}
+                  onChange={e => setForm({ ...form, title: e.target.value })}
                   placeholder="e.g. HTML & CSS Basics"
                 />
               </div>
@@ -76,7 +109,7 @@ export default function TrainerDashboard() {
                 <select
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1"
                   value={form.batchId}
-                  onChange={(e: { target: { value: any } }) => setForm({ ...form, batchId: e.target.value })}
+                  onChange={e => setForm({ ...form, batchId: e.target.value })}
                 >
                   <option value="">Select batch</option>
                   {batches.map((b: any) => (
@@ -90,7 +123,7 @@ export default function TrainerDashboard() {
                   type="date"
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1"
                   value={form.date}
-                  onChange={(e: { target: { value: any } }) => setForm({ ...form, date: e.target.value })}
+                  onChange={e => setForm({ ...form, date: e.target.value })}
                 />
               </div>
               <div>
@@ -99,7 +132,7 @@ export default function TrainerDashboard() {
                   type="time"
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1"
                   value={form.startTime}
-                  onChange={(e: { target: { value: any } }) => setForm({ ...form, startTime: e.target.value })}
+                  onChange={e => setForm({ ...form, startTime: e.target.value })}
                 />
               </div>
               <div>
@@ -108,7 +141,7 @@ export default function TrainerDashboard() {
                   type="time"
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-1"
                   value={form.endTime}
-                  onChange={(e: { target: { value: any } }) => setForm({ ...form, endTime: e.target.value })}
+                  onChange={e => setForm({ ...form, endTime: e.target.value })}
                 />
               </div>
             </div>
