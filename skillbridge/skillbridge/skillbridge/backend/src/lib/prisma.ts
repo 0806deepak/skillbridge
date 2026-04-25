@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import process from 'process'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: InstanceType<typeof PrismaClient> | undefined
